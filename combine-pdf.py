@@ -28,7 +28,7 @@ if __name__ == '__main__':
                         )
     parser.add_argument('filename',
                         type=str,
-                        help="Import directory containing PDFs that need page shifting.",
+                        help="First file in the group that needs to be combined.",
                         )
     args = parser.parse_args()
 
@@ -41,7 +41,8 @@ if __name__ == '__main__':
 
     files = getfilenames(args.filename, args.debug)
 
-    print(files)
+    if args.verbose:
+        print(files)
 
     if not args.test:
         journaltools.combinepdf(files, output_file, args.verbose)

@@ -424,27 +424,18 @@ def croppages(input_file, output_file, verbose, debug):
 def combinepdf(input_files, output_file, verbose):
     # This will quickly combine several PDFs into one file. It can be used with bash scripts to combine things that
     # are regularly split up in a file set. I used this to recombine parts of indexes for a law journal into
-    # one file for each volume. WARNING: The files end up being quite large at times. It's best to process all of the
-    # new files through Acrobat by saving as a reduced size PDF. Even with a non-lossy image compressor, they should be
-    # significantly smaller than what this creates. If I can figure out why, I'll fix it. Whatever the problem is
-    # doesn't seem to affect the routines that split big PDFs into smaller pieces.
+    # one file for each volume.
 
-    # Set and open output file. Maybe add option to provide output file.
+    # Set and open output file.
     if verbose:
         print(f'Combining {input_files}')
     pdf_output_file = open(output_file, 'wb')
-    pdf_writer = PyPDF2.PdfFileWriter()
+    pdf_writer = PyPDF2.PdfFileMerger()
 
     # Step through files in input_files list and combine them into output_file
     for r in range(0, len(input_files)):
-        input_pdf = open(input_files[r], 'rb')
-        pdf_reader = PyPDF2.PdfFileReader(input_pdf, strict=False)
-        max_pages = pdf_reader.getNumPages()
-        for page_number in range(0, max_pages):
-            page_obj = pdf_reader.getPage(page_number)
-            pdf_writer.addPage(page_obj)
-        pdf_writer.write(pdf_output_file)
-        input_pdf.close()
+        pdf_writer.append(input_files[r])
+    pdf_writer.write(pdf_output_file)
     pdf_output_file.close()
 
 
@@ -457,33 +448,16 @@ def shiftpage(input_file1, input_file2, output_file, verbose):
     # Open first input file and output file.
     if verbose:
         print(f'Opening {input_file1}')
-    input_pdf = open(input_file1, 'rb')
-    pdf_reader = PyPDF2.PdfFileReader(input_pdf, strict=False)
     pdf_output_file = open(output_file, 'wb')
-    pdf_writer = PyPDF2.PdfFileWriter()
+    pdf_writer = PyPDF2.PdfFileMerger()
 
-    # Get the number of pages in the first input file.
-    max_pages = pdf_reader.getNumPages()
+    # Use PdfFileMerger to append the first page of input_file2 to the end of input_file1
+    pdf_writer.append(input_file1)
+    pdf_writer.append(input_file2, pages=(0, 1))
 
-    # Copy all pages in the first input file to the output file one at a time.
-    # There may be a more efficient way to do this part of the copy operation. Check the PyPDF2 docs.
-    for page_number in range(0, max_pages):
-        page_obj = pdf_reader.getPage(page_number)
-        pdf_writer.addPage(page_obj)
-    pdf_writer.write(pdf_output_file)
-    input_pdf.close()
-
-    # Open input file 2. Fetch only the first page (page 0). Copy to output file.
-    if verbose:
-        print(f'Opening {input_file2}')
-        input_pdf = open(input_file2, 'rb')
-    pdf_reader = PyPDF2.PdfFileReader(input_pdf, strict=False)
-    page_obj = pdf_reader.getPage(0)
-    pdf_writer.addPage(page_obj)
     if verbose:
         print(f'Writing {pdf_output_file}')
     pdf_writer.write(pdf_output_file)
-    input_pdf.close()
     pdf_output_file.close()
 
 
