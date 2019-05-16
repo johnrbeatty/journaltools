@@ -63,13 +63,6 @@ def splitpdf(filename, verbose, debug, start_pdf_page, end_pdf_page, output_file
     # input file, pull out the pages between the start page and the matching end page, and write them to a new file
     # with the output file name, plus the number of the loop counter variable.
     for r in range(0, len(start_pdf_page)):
-        input_pdf = open(filename, 'rb')
-        pdf_reader = PyPDF2.PdfFileReader(input_pdf, strict=False)
-        export_file = output_file + '-' + str(r) + '.pdf'
-        if verbose:
-            print(f'Exporting to {export_file}')
-        pdf_output_file = open(export_file, 'wb')
-        pdf_writer = PyPDF2.PdfFileWriter()
         # This debug output is probably mostly useful if the OCR on your PDF files is good enough to do the metadata
         # gathering and PDF splitting in one step. None of ours were, so the pages were all checked by hand before
         # splitting. If yours are better, this could be useful while you're tweaking the regular expressions to extract
@@ -78,14 +71,16 @@ def splitpdf(filename, verbose, debug, start_pdf_page, end_pdf_page, output_file
             print(f'Record: {r}')
             print(f'Start page: {start_pdf_page[r]}')
             print(f'End page: {end_pdf_page[r]}')
+
+        export_file = output_file + '-' + str(r) + '.pdf'
+        if verbose:
+            print(f'Exporting to {export_file}')
+        pdf_output_file = open(export_file, 'wb')
+        pdf_writer = PyPDF2.PdfFileMerger()
         # Check to make sure that the page ranges make sense. Is the end page after the start page? If so, copy pages
         # to a new file. If not, give the user an error message.
         if end_pdf_page > start_pdf_page:
-            for pageNum in range(start_pdf_page[r], end_pdf_page[r] + 1):
-                if debug == 4:
-                    print(f'Adding page: {pageNum}')
-                page_obj = pdf_reader.getPage(pageNum)
-                pdf_writer.addPage(page_obj)
+            pdf_writer.append(filename, pages=(start_pdf_page[r], end_pdf_page[r]+1))
         else:
             print(f'End page ({end_pdf_page[r]}) is after start page ({start_pdf_page[r]}) for record {r}')
         pdf_writer.write(pdf_output_file)
