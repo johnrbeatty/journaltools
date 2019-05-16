@@ -95,14 +95,17 @@ def importxl(import_file):
         author_temp = ws.cell(row=i, column=first_col).internal_value, \
             ws.cell(row=i, column=middle_col).internal_value, ws.cell(row=i, column=last_col).internal_value, \
             ws.cell(row=i, column=suffix_col).internal_value
-        if ws.cell(row=i, column=author2_first_col).internal_value:
-            author_temp2 = ws.cell(row=i, column=author2_first_col).internal_value, \
-                           ws.cell(row=i, column=author2_middle_col).internal_value, \
-                           ws.cell(row=i, column=author2_last_col).internal_value, \
-                           ws.cell(row=i, column=author2_suffix_col).internal_value
-            author_list = [author_temp, author_temp2]
-        else:
-            author_list = [author_temp]
+        author_list = [author_temp]
+        # Only look for second author if there were second author columns in the input file.
+        if author2_first_col:
+            # If there are columns in the input file for a second author, check to make sure there's a value in the
+            # first name field. If there is, then pull all four columns into a tuple, then append it to the list.
+            if ws.cell(row=i, column=author2_first_col).internal_value:
+                author_temp = ws.cell(row=i, column=author2_first_col).internal_value, \
+                               ws.cell(row=i, column=author2_middle_col).internal_value, \
+                               ws.cell(row=i, column=author2_last_col).internal_value, \
+                               ws.cell(row=i, column=author2_suffix_col).internal_value
+                author_list.append(author_temp)
 
         if author_list:
             author.append(author_list)
@@ -126,11 +129,6 @@ def main():
     parser.add_argument('-t', '--test',
                         action='store_true',
                         help="Test only. Don't output any files. Use with debug options to see test output.",
-                        )
-    parser.add_argument('--write-csv-only',
-                        action="store_true",
-                        dest="csvOnly",
-                        help="Write CSV file, but don't split PDFs. Test flag takes precedence.",
                         )
     parser.add_argument('-d', '--debug',
                         action='store_true',
