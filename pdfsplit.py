@@ -47,22 +47,22 @@ if __name__ == '__main__':
     # Split filename from extension before passing to the various functions. Use input filename for template
     # if no output filename specified.
     if args.destination:
-        outputFile, outputExtension = os.path.splitext(args.destination)
+        output_file, output_extension = os.path.splitext(args.destination)
     else:
-        outputFile, outputExtension = os.path.splitext(args.filename)
+        output_file, output_extension = os.path.splitext(args.filename)
 
     # Set input CSV filename. If no filename provided, use the input filename with CSV extension.
     if args.input_file:
-        inputFile = args.input_file
+        input_file = args.input_file
     else:
-        inputFile, inputExtension = os.path.splitext(args.filename)
-        inputFile = inputFile + '.csv'
+        input_file, input_extension = os.path.splitext(args.filename)
+        input_file = input_file + '.csv'
 
-    # Read CSVfile and get StartPDFPage and EndPDFPage to pass to splitpdf
-    if os.path.exists(inputFile):
-        StartPDFPage, EndPDFPage = journaltools.importcsv(inputFile, args.debug)
+    # Read CSVfile and get starting and ending PDF pages to pass to splitpdf
+    if os.path.exists(input_file):
+        start_pdf_page, end_pdf_page = journaltools.importcsv(input_file, args.debug)
         # Split Original PDF into separate documents for each piece, unless test flag is set
         if not args.test:
-            journaltools.splitpdf(args.filename, args.verbose, args.debug, StartPDFPage, EndPDFPage, outputFile)
+            journaltools.splitpdf(args.filename, args.verbose, args.debug, start_pdf_page, end_pdf_page, output_file)
     else:
-        print(f'{inputFile} not present. Please specify a valid CSV file to use for the split points.')
+        print(f'{input_file} not present. Please specify a valid CSV file to use for the split points.')

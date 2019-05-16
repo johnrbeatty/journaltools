@@ -4,6 +4,14 @@ import argparse
 from openpyxl import load_workbook
 from journaltools import exportcsvnew
 
+# This program takes in a user-compiled Excel file with the journal metadata and converts it to a CSV file for use
+# with the other tools here. It's used in place of dsplit for journals which are unsuitable for automatic
+# metadata collecting.
+#
+# This is set up for the UB Law Forum. One of its quirks is that most articles are in sections. There is no
+# metadata for the sections in the repository, so the code here prepends the section to the article title.
+# A better option is probably to figure out a cleaner way to represent the metadata in the repository.
+
 
 def importxl(import_file):
     # Import CSV file for this issue. User should in theory use a template with the right fields. Note to self: create
@@ -12,7 +20,6 @@ def importxl(import_file):
     # can be used to split the full issue PDF and also to be converted to Digital Commons format for "easy" batch
     # importing. Har har har.
 
-    # Define lists
     title = []
     page = []
     pdf_start_page = []
@@ -34,11 +41,9 @@ def importxl(import_file):
     author2_last_col = 0
     author2_suffix_col = 0
 
-    # Open workbook
     wb = load_workbook(filename=import_file, data_only=True)
     ws = wb.active
-
-    # Read first row and get headers
+    # Read first row and get headers.
     headers = []
     for c in range(1, ws.max_column+1):
         headers.append(ws.cell(row=1, column=c).internal_value)
@@ -70,12 +75,12 @@ def importxl(import_file):
         if headers[c] == 'author2_suffix':
             author2_suffix_col = c + 1
 
-    # Iterate through all rows, reading values
+    # Iterate through all rows, reading values into lists to pass back to main.
     max_row = ws.max_row
-
     for i in range(2, max_row+1):
         section = ws.cell(row=i, column=section_col).internal_value
         title_temp = ws.cell(row=i, column=title_col).internal_value
+        # Prepend the section title if there is one to the article title.
         if section:
             title.append(section + ': ' + title_temp)
         else:
@@ -85,10 +90,8 @@ def importxl(import_file):
             page.append(page_temp)
         else:
             page.append('')
-
         pdf_start_page.append(ws.cell(row=i, column=start_col).internal_value)
         pdf_end_page.append(ws.cell(row=i, column=end_col).internal_value)
-
         author_temp = ws.cell(row=i, column=first_col).internal_value, \
             ws.cell(row=i, column=middle_col).internal_value, ws.cell(row=i, column=last_col).internal_value, \
             ws.cell(row=i, column=suffix_col).internal_value
@@ -109,8 +112,7 @@ def importxl(import_file):
     return title, page, pdf_start_page, pdf_end_page, author
 
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('filename',
                         help='PDF file to process.',
@@ -131,9 +133,9 @@ if __name__ == '__main__':
                         help="Write CSV file, but don't split PDFs. Test flag takes precedence.",
                         )
     parser.add_argument('-d', '--debug',
+                        action='store_true',
                         dest='debug',
-                        type=int,
-                        help="Set debug level (1-6).",
+                        help="Show debug output.",
                         default=0,
                         )
     parser.add_argument('-o', '--output-file',
@@ -146,12 +148,16 @@ if __name__ == '__main__':
     # Split filename from extension before passing to the various functions. Use input filename for template
     # if no output filename specified.
     if args.destination:
-        outputFile, outputExtension = os.path.splitext(args.destination)
+        output_file, output_extension = os.path.splitext(args.destination)
     else:
-        outputFile, outputExtension = os.path.splitext(args.filename)
+        output_file, output_extension = os.path.splitext(args.filename)
 
     # Fetch metadata from import Excel file
-    Title, startPage, startPdfPage, endPdfPage, Author = importxl(args.filename)
+    title, start_page, start_pdf_page, end_pdf_page, author = importxl(args.filename)
     # Export CSV file, or show what output would be if test flag is set
-    exportcsvnew(outputFile, args.verbose, args.debug, args.test, Title, startPage, startPdfPage,
-                 endPdfPage, Author)
+    exportcsvnew(output_file, args.verbose, args.debug, args.test, title, start_page, start_pdf_page,
+                 end_pdf_page, author)
+
+
+if __name__ == '__main__':
+    main()

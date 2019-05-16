@@ -8,11 +8,20 @@ from journaltools import getpdf
 from journaltools import splitname
 import csv
 
+# This is a version of dsplit for current volumes of the Buffalo Law Review. Those volumes come in as individual
+# articles, so there is no need for PDF splitting. There is also no OCR because the files are generated in the
+# printing process, so the initial CSV will be more accurate. This routine picks up additional metadata that is
+# useful is processing new volumes, including date, volume and issue information. Because of the extra metadata,
+# this program has its own customized version of journaltools.exportcsv built in.
+
+# At some point, I would like to recode journaltools.exportcsv to be able to work with this and the other CSV files,
+# but I have no idea when or if that will happen.
+
 
 def processpdfnew(verbose, debug, page_text):
     # This is the main processing function. It looks through each page of the list passed to it and tries to pull
     # as much metadata as it can find.
-
+    #
     # The format of this journal is: the first page of each issue contains a header that has the journal name,
     # volume number, issue number, month and year, and then the article title in mixed case, then the author in all
     # caps. That will usually be followed by the first heading of the article. Subsequent articles will follow this
@@ -26,7 +35,6 @@ def processpdfnew(verbose, debug, page_text):
     # Store this metadata and the start and end pages of each article into lists.
     if verbose:
         print(f'Processing PDF pages')
-
     title = ''
     volume = 0
     start_page = 0
@@ -37,10 +45,8 @@ def processpdfnew(verbose, debug, page_text):
     doc_type = ''
 
     for page_number in range(0, 3):
-
         if 0 < debug < 6:
             print('Processing PDF page number %d' % page_number)
-
         if page_number == 0:
             # Process first page. Split page into lines, then step through lines
             page_lines = page_text[page_number].splitlines()
@@ -145,7 +151,7 @@ def processpdfnew(verbose, debug, page_text):
                 continue
             if 2 < debug < 5:
                 print(f'{page_lines}')
-            for line in range(0,10):
+            for line in range(0, 10):
                 if 1 < debug < 3:
                     print(f'Line: {line}')
                     print(f'{page_lines[line]}')
@@ -178,7 +184,7 @@ def exportcsv(output_file, verbose, debug, test, title, volume, start_page, issu
 
     # Also, the import code should probably check the headers and make sure it's pulling in the right columns.
 
-    # Initialize empty author variables.
+    # Initialize empty author variables. This is not the best way to do this. Update from new journaltools.exportcsv.
     for r in range(len(author), 4):
         author.append('')
     f_name1 = ''
@@ -200,16 +206,13 @@ def exportcsv(output_file, verbose, debug, test, title, volume, start_page, issu
 
     # Export collected metadata to CSV file. If test flag set, display metadata instead.
     if not test:
-
         # Set export filename. Replace pdf extension in processed file with csv extension.
         export_file = output_file + '.csv'
-
         # Check if file exists. If not, set a flag so that the header gets written.
         if os.path.isfile(export_file):
             header_flag = 1
         else:
             header_flag = 0
-
         # Open export file.
         with open(export_file, "a+", newline='\n') as csvfile:
             # Set options for CSV writer.
@@ -265,8 +268,7 @@ def exportcsv(output_file, verbose, debug, test, title, volume, start_page, issu
               f'{l_name3}, {suffix3}, {f_name4}, {m_name4}, {l_name4}, {suffix4}')
 
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('filename',
                         help='PDF file to analyze and split.',
@@ -303,15 +305,19 @@ if __name__ == '__main__':
     # Split filename from extension before passing to the various functions. Use input filename for template
     # if no output filename specified.
     if args.destination:
-        outputFile, outputExtension = os.path.splitext(args.destination)
+        output_file, output_extension = os.path.splitext(args.destination)
     else:
-        outputFile, outputExtension = os.path.splitext(args.filename)
+        output_file, output_extension = os.path.splitext(args.filename)
 
     # Fetch OCR page text from PDF file at args.filename.
-    pageText = getpdf(args.filename, 3, args.verbose, args.debug)
-    # Process pages in pageText
+    page_text = getpdf(args.filename, 3, args.verbose, args.debug)
+    # Process pages in page_text
     title, volume, fpage, issue, month, year, document_type, authors = processpdfnew(args.verbose, args.debug,
-                                                                                     pageText)
+                                                                                     page_text)
     # Export CSV file, or show what output would be if test flag is set
-    exportcsv(outputFile, args.verbose, args.debug, args.test, title, volume, fpage, issue, month, year,
+    exportcsv(output_file, args.verbose, args.debug, args.test, title, volume, fpage, issue, month, year,
               document_type, authors)
+
+
+if __name__ == '__main__':
+    main()

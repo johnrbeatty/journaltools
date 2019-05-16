@@ -3,7 +3,8 @@ import os
 
 import journaltools
 
-# Command line interface for shiftpage. Take in two filenames to pass to shiftpage.
+# Command line interface for shiftpage. Take in two filenames to pass to shiftpage, which will copy the first page
+# of input_file2 and add it to the end of input_file1.
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -28,7 +29,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Separate filename from extension. Add '-NEW' to output filename.
-    # Maybe add in code to accept an output filename in future version?
     if args.destination:
         output_file = args.destination
     else:

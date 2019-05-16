@@ -1,21 +1,23 @@
 import argparse
 import os
 
-import journaltools
-
+from journaltools import combinepdf
 from journaltools import getfilenames
 
 if __name__ == '__main__':
-    # Command-line parser for combinepdf/getfilenames. Add output file option.
-    parser = argparse.ArgumentParser()
+    # Command-line parser for combinepdf using getfilenames to build the file list.
+    parser = argparse.ArgumentParser(
+        description='Combines consecutive PDF files named in Hein-style sequence.'
+    )
+    parser.add_argument('filename',
+                        type=str,
+                        help="File name of the first file in the group that needs to be combined. Files should be "
+                             "standard Hein names",
+                        )
     parser.add_argument('-v', '--verbose',
                         action='store_true',
                         dest='verbose',
                         help='Print status messages.',
-                        )
-    parser.add_argument('-t', '--test',
-                        action='store_true',
-                        help="Test only. Don't output any files. Use with debug options to see test output.",
                         )
     parser.add_argument('-d', '--debug',
                         action='store_true',
@@ -24,11 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output-file',
                         dest='destination',
                         type=str,
-                        help='Output file. Default is input file.xslx',
-                        )
-    parser.add_argument('filename',
-                        type=str,
-                        help="First file in the group that needs to be combined.",
+                        help='Output file. Default is <input file>-NEW.<ext>',
                         )
     args = parser.parse_args()
 
@@ -45,4 +43,4 @@ if __name__ == '__main__':
         print(files)
 
     if not args.test:
-        journaltools.combinepdf(files, output_file, args.verbose)
+        combinepdf(files, output_file, args.verbose)

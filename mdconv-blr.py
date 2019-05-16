@@ -4,8 +4,12 @@ import csv
 
 from openpyxl import Workbook
 
+# This is an alternate routine to dc-convert.py & journaltools.convertcsv that is used with CSV files exported
+# from mdgen-blr.py. It converts and exports those files to an Excel file that can be cut and pasted into a
+# Digital Commons batch import spreadsheet.
 
-def convertcsv(input_file, output_file):
+
+def convertcsv(input_file, output_file, verbose):
     # Import a CSV file that has been exported from this code. Read file, everything except the start and end PDF
     # pages, then spit them out into an Excel workbook.
 
@@ -15,8 +19,8 @@ def convertcsv(input_file, output_file):
     wbrow = 1
     dest_filename = output_file + '.xlsx'
 
-    # Add verbose flag for this
-    print(f'Reading {input_file}')
+    if verbose:
+        print(f'Reading {input_file}')
 
     # Declare/clear variables
     title = ""
@@ -150,34 +154,24 @@ def convertcsv(input_file, output_file):
 
     csvfile.close()
     wb.save(filename=dest_filename)
-    print(f'Saving {dest_filename}')
+    if verbose:
+        print(f'Saving {dest_filename}')
     wb.close()
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose',
                         action='store_true',
                         dest='verbose',
                         help='Print status messages.',
                         )
-    parser.add_argument('-t', '--test',
-                        action='store_true',
-                        help="Test only. Don't output any files. Use with debug options to see test output.",
-                        )
-    parser.add_argument('-d', '--debug',
-                        dest='debug',
-                        type=int,
-                        help="Set debug level (1-6).",
-                        default=0,
-                        )
     parser.add_argument('-o', '--output-file',
                         dest='destination',
                         type=str,
-                        help='Output file. Default is input file.xslx',
+                        help='Output file. Default is <input file>.xslx',
                         )
-    parser.add_argument('-i', '--input-file',
-                        dest='input_file',
+    parser.add_argument('input_file',
                         type=str,
                         help="Import CSV file to be used for PDF splitting. Must be in same format as export.")
     args = parser.parse_args()
@@ -185,13 +179,13 @@ if __name__ == '__main__':
     # Split filename from extension before passing to the various functions. Use input filename for template
     # if no output filename specified.
     if args.destination:
-        outputFile, outputExtension = os.path.splitext(args.destination)
+        output_file, output_extension = os.path.splitext(args.destination)
     else:
-        outputFile, outputExtension = os.path.splitext(args.input_file)
+        output_file, output_extension = os.path.splitext(args.input_file)
 
-    # If importCSV is specified, read that file and get StartPDFPage and EndPDFPage to pass to SplitPDFs
-    # If no importCSV is selected, process args.filename
-    if args.input_file:
-        convertcsv(args.input_file, outputFile)
-    else:
-        print('No input file. Nothing to do.')
+    # Read input_file and export to Excel
+    convertcsv(args.input_file, output_file, args.verbose)
+
+
+if __name__ == '__main__':
+    main()

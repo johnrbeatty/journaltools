@@ -4,6 +4,10 @@ import re
 
 import journaltools
 
+# This version of dsplit is set up to extract metadata from and split book reviews in the Buffalo Law Review. Those
+# book reviews have the title at the top, then whitespace, then the text, followed by more whitespace and the author.
+# It should be a good starting point for other similar journal segments.
+
 
 def processpdfnew(verbose, debug, pagetext):
 
@@ -127,9 +131,11 @@ def processpdfnew(verbose, debug, pagetext):
     return title, start_page, start_pdf_page, end_pdf_page, author1, author2
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
+def main():
+    parser = argparse.ArgumentParser(
+        description='Function to extract metadata and split a PDF containing multiple journal articles. Set up for '
+                    'Buffalo Law Review book reviews.'
+    )
     parser.add_argument('filename',
                         help='PDF file to analyze and split.',
                         type=str,
@@ -151,7 +157,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debug',
                         dest='debug',
                         type=int,
-                        help="Set debug level (1-6).",
+                        help="Set debug level (1-6). Levels 1-4 offer increasing levels of output. Level 5 displays "
+                             "the PDF text. Level 6 prints all of the records.",
                         default=0,
                         )
     parser.add_argument('-o', '--output-file',
@@ -168,23 +175,28 @@ if __name__ == '__main__':
     # Split filename from extension before passing to the various functions. Use input filename for template
     # if no output filename specified.
     if args.destination:
-        outputFile, outputExtension = os.path.splitext(args.destination)
+        output_file, output_extension = os.path.splitext(args.destination)
     else:
-        outputFile, outputExtension = os.path.splitext(args.filename)
+        output_file, output_extension = os.path.splitext(args.filename)
 
-    # If importCSV is specified, read that file and get StartPDFPage and EndPDFPage to pass to SplitPDFs
+    # If importCSV is specified, read that file and get start_pdf_page and end_pdf_page to pass to SplitPDFs
     # If no importCSV is selected, process args.filename
     if args.input_file:
-        StartPDFPage, EndPDFPage = journaltools.importcsv(args.input_file, args.debug)
+        start_pdf_page, end_pdf_page = journaltools.importcsv(args.input_file, args.debug)
     else:
-        # Fetch OCR page text from PDF file at args.filename.
-        pageText = journaltools.getpdf(args.filename, 0, args.verbose, args.debug)
-        # Process pages in pageText
-        Title, StartPage, StartPDFPage, EndPDFPage, Author1, Author2 = processpdfnew(args.verbose, args.debug, pageText)
+        # Fetch OCR page text from PDF file
+        page_text = journaltools.getpdf(args.filename, 0, args.verbose, args.debug)
+        # Process pages
+        title, start_page, start_pdf_page, end_pdf_page, author1, author2 = processpdfnew(
+            args.verbose, args.debug, page_text)
         # Export CSV file, or show what output would be if test flag is set
-        journaltools.exportcsv(outputFile, args.verbose, args.debug, args.test, Title, StartPage, StartPDFPage,
-                               EndPDFPage, Author1, Author2)
+        journaltools.exportcsv(output_file, args.verbose, args.debug, args.test, title, start_page, start_pdf_page,
+                               end_pdf_page, author1, author2)
 
     # Split Original PDF into separate documents for each piece, unless test or csvOnly flags are set
     if not args.test and not args.csvOnly:
-        journaltools.splitpdf(args.filename, args.verbose, args.debug, StartPDFPage, EndPDFPage, outputFile)
+        journaltools.splitpdf(args.filename, args.verbose, args.debug, start_pdf_page, end_pdf_page, output_file)
+
+
+if __name__ == '__main__':
+    main()
