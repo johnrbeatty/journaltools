@@ -232,40 +232,23 @@ def exportcsvnew(output_file, verbose, debug, test, title, start_page, start_pdf
                                   'suffix4'])
             # Step through each record and write to CSV
             for r in range(0, len(title)):
-                # Unpack authors
-                author_first, author_middle, author_last, author_suffix = author[r][0]
-                if len(author[r]) >= 2:
-                    author2_first, author2_middle, author2_last, author2_suffix = author[r][1]
-                else:
-                    author2_first = ''
-                    author2_middle = ''
-                    author2_last = ''
-                    author2_suffix = ''
-                if len(author[r]) >= 3:
-                    author3_first, author3_middle, author3_last, author3_suffix = author[r][2]
-                else:
-                    author3_first = ''
-                    author3_middle = ''
-                    author3_last = ''
-                    author3_suffix = ''
-                if len(author[r]) >= 4:
-                    author4_first, author4_middle, author4_last, author4_suffix = author[r][3]
-                else:
-                    author4_first = ''
-                    author4_middle = ''
-                    author4_last = ''
-                    author4_suffix = ''
+                # Check author list to make sure there is data for four authors. For any list entry with no data,
+                # append a blank string. This will avoid errors and write a blank entry to the csv file.
+                for c in range(0, 4):
+                    if len(author[r]) < c+1:
+                        author[r].append(('', '', '', ''))
 
                 if debug:
-                    print(f'{title[r]}, {start_page[r]}, {start_pdf_page[r]}, {end_pdf_page[r]}, {author_first},'
-                          f' {author_middle}, {author_last}, {author_suffix}, {author2_first}, {author2_middle},'
-                          f' {author2_last}, {author2_suffix}, {author3_first}, {author3_middle}, {author3_last},'
-                          f' {author3_suffix}, {author4_first}, {author4_middle}, {author4_last}, {author4_suffix}')
+                    print(f'{title[r]}, {start_page[r]}, {start_pdf_page[r]}, {end_pdf_page[r]}, {author[r][0][0]},'
+                          f' {author[r][0][1]}, {author[r][0][2]}, {author[r][0][3]}, {author[r][1][0]},'
+                          f' {author[r][1][1]}, {author[r][1][2]}, {author[r][1][3]}, {author[r][2][0]},'
+                          f' {author[r][2][1]}, {author[r][2][2]}, {author[r][2][3]}, {author[r][3][0]},'
+                          f' {author[r][3][1]}, {author[r][3][2]}, {author[r][3][3]}')
                 data_writer.writerow(
-                    [title[r], start_page[r], start_pdf_page[r], end_pdf_page[r], author_first, author_middle,
-                     author_last, author_suffix, author2_first, author2_middle, author2_last, author2_suffix,
-                     author3_first, author3_middle, author3_last, author3_suffix, author4_first, author4_middle,
-                     author4_last, author4_suffix])
+                    [title[r], start_page[r], start_pdf_page[r], end_pdf_page[r], author[r][0][0], author[r][0][1],
+                     author[r][0][2], author[r][0][3], author[r][1][0], author[r][1][1], author[r][1][2],
+                     author[r][1][3], author[r][2][0], author[r][2][1], author[r][2][2], author[r][2][3],
+                     author[r][3][0], author[r][3][1], author[r][3][2], author[r][3][3]])
             csvfile.close()
             if verbose:
                 print("Data written to file: %s" % export_file)
