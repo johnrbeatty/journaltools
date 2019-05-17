@@ -440,10 +440,7 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
 
     title_col = 0
     page_col = 0
-    author1_col = 0
-    author2_col = 0
-    author3_col = 0
-    author4_col = 0
+    author_col = []
 
     if template_file:
         if verbose:
@@ -460,24 +457,18 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
                 title_col = c + 1
             if headers[c] == 'fpage':
                 page_col = c + 1
-            if headers[c] == 'author1_fname':
-                author1_col = c + 1
-            if headers[c] == 'author2_fname':
-                author2_col = c + 1
-            if headers[c] == 'author3_fname':
-                author3_col = c + 1
-            if headers[c] == 'author4_fname':
-                author4_col = c + 1
+            for n in range(0, 4):
+                if headers[c] == 'author' + str(n+1) + '_fname':
+                    author_col.append(c + 1)
+        if debug:
+            print(author_col)
     else:
         title_col = 1
         page_col = 37
-        author1_col = 5
-        author2_col = 12
-        author3_col = 19
-        author4_col = 26
+        author_col = [5, 12, 19, 26]
 
     if debug:
-        print(f'{title_col}, {page_col}, {author1_col}, {author2_col}')
+        print(f'{title_col}, {page_col}, {author_col}')
 
     wb = Workbook()
     ws = wb.active
@@ -486,25 +477,6 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
 
     if verbose:
         print(f'Reading {input_file}')
-
-    title = ''
-    start_page = ''
-    f_name1 = ''
-    m_name1 = ''
-    l_name1 = ''
-    suffix1 = ''
-    f_name2 = ''
-    m_name2 = ''
-    l_name2 = ''
-    suffix2 = ''
-    f_name3 = ''
-    m_name3 = ''
-    l_name3 = ''
-    suffix3 = ''
-    f_name4 = ''
-    m_name4 = ''
-    l_name4 = ''
-    suffix4 = ''
 
     # Step through each row of input CSV file. Read in each row and assign to variables. Write to Excel file.
     # The columns are hard-coded to correspond to the Digital Commons import columns for Buffalo Law Review.
@@ -517,10 +489,7 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
         headers = next(data_reader)
         title_in_col = ''
         page_in_col = ''
-        author1_in_col = ''
-        author2_in_col = ''
-        author3_in_col = ''
-        author4_in_col = ''
+        author_in_col = []
 
         for c in range(0, len(headers)):
             if headers[c] == 'title':
@@ -530,100 +499,40 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
             if headers[c] == 'start_page':
                 page_in_col = c
                 ws.cell(row=wbrow, column=page_col, value='fpage')
-            if headers[c] == 'f_name1':
-                author1_in_col = c
-                ws.cell(row=wbrow, column=author1_col, value='author1_fname')
-                ws.cell(row=wbrow, column=author1_col+1, value='author1_mname')
-                ws.cell(row=wbrow, column=author1_col+2, value='author1_lname')
-                ws.cell(row=wbrow, column=author1_col+3, value='author1_suffix')
-                ws.cell(row=wbrow, column=author1_col+6, value='author1_is_corporate')
-            if headers[c] == 'f_name2':
-                author2_in_col = c
-                ws.cell(row=wbrow, column=author2_col, value='author2_fname')
-                ws.cell(row=wbrow, column=author2_col+1, value='author2_mname')
-                ws.cell(row=wbrow, column=author2_col+2, value='author2_lname')
-                ws.cell(row=wbrow, column=author2_col+3, value='author2_suffix')
-                ws.cell(row=wbrow, column=author2_col+6, value='author2_is_corporate')
-            if headers[c] == 'f_name3':
-                author3_in_col = c
-                ws.cell(row=wbrow, column=author3_col, value='author3_fname')
-                ws.cell(row=wbrow, column=author3_col + 1, value='author3_mname')
-                ws.cell(row=wbrow, column=author3_col + 2, value='author3_lname')
-                ws.cell(row=wbrow, column=author3_col + 3, value='author3_suffix')
-                ws.cell(row=wbrow, column=author3_col + 6, value='author3_is_corporate')
-            if headers[c] == 'f_name4':
-                author4_in_col = c
-                ws.cell(row=wbrow, column=author4_col, value='author4_fname')
-                ws.cell(row=wbrow, column=author4_col + 1, value='author4_mname')
-                ws.cell(row=wbrow, column=author4_col + 2, value='author4_lname')
-                ws.cell(row=wbrow, column=author4_col + 3, value='author4_suffix')
-                ws.cell(row=wbrow, column=author4_col + 6, value='author4_is_corporate')
+            for n in range(0, 4):
+                if headers[c] == 'f_name' + str(n+1):
+                    author_in_col.append(c)
+                    ws.cell(row=wbrow, column=author_col[n], value='author' +str(n+1) + '_fname')
+                    ws.cell(row=wbrow, column=author_col[n]+1, value='author' +str(n+1) + '_mname')
+                    ws.cell(row=wbrow, column=author_col[n]+2, value='author' +str(n+1) + '_lname')
+                    ws.cell(row=wbrow, column=author_col[n]+3, value='author' +str(n+1) + '_suffix')
+                    ws.cell(row=wbrow, column=author_col[n]+6, value='author' +str(n+1) + '_is_corporate')
         wbrow += 1
 
         if debug:
             print(headers)
-            print(f'{title_in_col}, {page_in_col}, {author1_in_col}, {author2_in_col}')
+            print(f'{title_in_col}, {page_in_col}, {author_in_col}')
 
         for row in data_reader:
             if title_flag:
-                title = row[title_in_col]
+                ws.cell(row=wbrow, column=title_col, value=row[title_in_col])
             if page_in_col:
-                start_page = row[page_in_col]
-            if author1_in_col:
-                f_name1 = (row[author1_in_col])
-                m_name1 = (row[author1_in_col + 1])
-                l_name1 = (row[author1_in_col + 2])
-                suffix1 = (row[author1_in_col + 3])
-            if author2_in_col:
-                f_name2 = (row[author2_in_col])
-                m_name2 = (row[author2_in_col + 1])
-                l_name2 = (row[author2_in_col + 2])
-                suffix2 = (row[author2_in_col + 3])
-            if author3_in_col:
-                f_name3 = (row[author3_in_col])
-                m_name3 = (row[author3_in_col + 1])
-                l_name3 = (row[author3_in_col + 2])
-                suffix3 = (row[author3_in_col + 3])
-            if author4_in_col:
-                f_name4 = (row[author4_in_col])
-                m_name4 = (row[author4_in_col + 1])
-                l_name4 = (row[author4_in_col + 2])
-                suffix4 = (row[author4_in_col + 3])
+                ws.cell(row=wbrow, column=page_col, value=row[page_in_col])
+            for n in range(0, 4):
+                if author_in_col[n]:
+                    try:
+                        ws.cell(row=wbrow, column=author_col[n], value=row[author_in_col[n]])
+                        ws.cell(row=wbrow, column=author_col[n]+1, value=row[author_in_col[n]+1])
+                        ws.cell(row=wbrow, column=author_col[n]+2, value=row[author_in_col[n]+2])
+                        ws.cell(row=wbrow, column=author_col[n]+3, value=row[author_in_col[n]+3])
+                    # Figure out how to get a row number out of this.
+                    except IndexError:
+                        print(f'Warning: Potentially missing data in row {row}')
+                    if row[author_in_col[n]] and row[author_in_col[n]+2]:
+                        ws.cell(row=wbrow, column=author_col[n]+6, value='FALSE')
+                    elif row[author_in_col[n]]:
+                        ws.cell(row=wbrow, column=author_col[n]+6, value='TRUE')
 
-            ws.cell(row=wbrow, column=title_col, value=title)
-            ws.cell(row=wbrow, column=page_col, value=start_page)
-            ws.cell(row=wbrow, column=author1_col, value=f_name1)
-            ws.cell(row=wbrow, column=author1_col+1, value=m_name1)
-            ws.cell(row=wbrow, column=author1_col+2, value=l_name1)
-            ws.cell(row=wbrow, column=author1_col+3, value=suffix1)
-            if f_name1 and l_name1:
-                ws.cell(row=wbrow, column=author1_col+6, value='FALSE')
-            else:
-                ws.cell(row=wbrow, column=author1_col+6, value='TRUE')
-            ws.cell(row=wbrow, column=author2_col, value=f_name2)
-            ws.cell(row=wbrow, column=author2_col+1, value=m_name2)
-            ws.cell(row=wbrow, column=author2_col+2, value=l_name2)
-            ws.cell(row=wbrow, column=author2_col+3, value=suffix2)
-            if f_name2 and l_name2:
-                ws.cell(row=wbrow, column=author2_col+6, value='FALSE')
-            elif f_name2:
-                ws.cell(row=wbrow, column=author2_col+6, value='TRUE')
-            ws.cell(row=wbrow, column=author3_col, value=f_name3)
-            ws.cell(row=wbrow, column=author3_col+1, value=m_name3)
-            ws.cell(row=wbrow, column=author3_col+2, value=l_name3)
-            ws.cell(row=wbrow, column=author3_col+3, value=suffix3)
-            if f_name3 and l_name3:
-                ws.cell(row=wbrow, column=author3_col+6, value='FALSE')
-            elif f_name3:
-                ws.cell(row=wbrow, column=author3_col+6, value='TRUE')
-            ws.cell(row=wbrow, column=author4_col, value=f_name4)
-            ws.cell(row=wbrow, column=author4_col+1, value=m_name4)
-            ws.cell(row=wbrow, column=author4_col+2, value=l_name4)
-            ws.cell(row=wbrow, column=author4_col+3, value=suffix4)
-            if f_name4 and l_name4:
-                ws.cell(row=wbrow, column=author4_col+6, value='FALSE')
-            elif f_name4:
-                ws.cell(row=wbrow, column=author4_col+6, value='TRUE')
             wbrow += 1
 
     csvfile.close()
