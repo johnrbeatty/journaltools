@@ -15,8 +15,7 @@ def processpdfnew(verbose, debug, pagetext):
     # Create lists for all values to be exported to CSV file. Each index value will correspond to the metadata
     # for one article across all lists. This code assumes that there will be no more than two authors on each article.
     title = []
-    author1 = []
-    author2 = []
+    author = []
     start_page = []
     start_pdf_page = []
     end_pdf_page = []
@@ -35,16 +34,21 @@ def processpdfnew(verbose, debug, pagetext):
         temp_title = temp_title.title()
         temp_title = journaltools.capitalize_title(temp_title)
         title.append(temp_title)
-        temp_author = re.sub(r' {2,}', ' ', toc[r][3])
-        temp_author = re.split(r' and ', temp_author, 2)
-        author1.append(temp_author[0])
-        if len(temp_author) > 1:
-            author2.append(temp_author[1])
-        else:
-            author2.append('')
+        find_author = re.sub(r' {2,}', ' ', toc[r][3])
+        find_author = re.split(r' and ', find_author, 2)
+        if find_author:
+            author_list = []
+            for count in range(0, 4):
+                try:
+                    f_name, m_name, l_name, suffix = journaltools.splitname(find_author[count])
+                    author_temp = f_name, m_name, l_name, suffix
+                except IndexError:
+                    author_temp = '', '', '', ''
+                author_list.append(author_temp)
+            author.append(author_list)
         start_page.append('')
         if 1 < debug < 5:
-            print(f'{title[r]}, {author1[r]}', author2[r])
+            print(f'{title[r]}, {author[r]}')
 
     # Process each page. Step through pages and attempt to find titles, authors, and page numbers in OCR text.
     # Store this metadata and the start and end pages of each article into lists.
@@ -99,8 +103,7 @@ def processpdfnew(verbose, debug, pagetext):
     if debug == 2 or debug == 4:
         print('\n\nAll list values:')
         print(title)
-        print(author1)
-        print(author2)
+        print(author)
         print(start_page)
         print(start_pdf_page)
         print(end_pdf_page)
@@ -108,11 +111,11 @@ def processpdfnew(verbose, debug, pagetext):
     if debug == 6:
         print('\n\nAll records:')
         for r in range(0, len(title)):
-            print(f'Record {r}: {title[r]}; {author1[r]}; {author2[r]}; {start_page[r]}; {start_pdf_page[r]};'
+            print(f'Record {r}: {title[r]}; {author[r]}; {start_page[r]}; {start_pdf_page[r]};'
                   f' {end_pdf_page[r]}')
 
     # Return all collected metadata lists.
-    return title, start_page, start_pdf_page, end_pdf_page, author1, author2
+    return title, start_page, start_pdf_page, end_pdf_page, author
 
 
 def main():
@@ -171,11 +174,11 @@ def main():
         # Fetch OCR page text from PDF file
         page_text = journaltools.getpdf(args.filename, 0, args.verbose, args.debug)
         # Process pages
-        title, start_page, start_pdf_page, end_pdf_page, author1, author2 = processpdfnew(
+        title, start_page, start_pdf_page, end_pdf_page, author = processpdfnew(
             args.verbose, args.debug, page_text)
         # Export CSV file, or show what output would be if test flag is set
-        journaltools.exportcsv(output_file, args.verbose, args.debug, args.test, title, start_page, start_pdf_page,
-                               end_pdf_page, author1, author2)
+        journaltools.exportcsvnew(output_file, args.verbose, args.debug, args.test, title, start_page, start_pdf_page,
+                                  end_pdf_page, author)
 
     # Split Original PDF into separate documents for each piece, unless test or csvOnly flags are set
     if not args.test and not args.csvOnly:

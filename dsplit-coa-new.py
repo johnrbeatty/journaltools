@@ -5,7 +5,7 @@ import re
 import journaltools
 
 # This version of dsplit is set up to extract metadata from and split middle-period Court of Appeals term case notes
-# in the Buffalo Law Review. SOme of those are unsigned. The code does looks for an author. If if finds one or two,
+# in the Buffalo Law Review. Some of those are unsigned. The code does looks for an author. If if finds one or two,
 # they are added to the authors list. If no author is found, it adds empty strings to the author lists. Because some
 # pieces aren't signed, it uses the start page of the next piece as as the end page.
 # This could also be used for unsigned book reviews or comments/notes.
@@ -16,8 +16,7 @@ def processpdfnew(verbose, debug, page_text):
     # Create lists for all values to be exported to CSV file. Each index value will correspond to the metadata
     # for one article across all lists. This code assumes that there will be no more than two authors on each article.
     title = []
-    author1 = []
-    author2 = []
+    author = []
     start_page = []
     start_pdf_page = []
     end_pdf_page = []
@@ -78,26 +77,29 @@ def processpdfnew(verbose, debug, page_text):
                     print('No start page found in PDF text')
 
         # Find authors. If one or two lines
-        # are returned, append them to temp_author. Append the current PDF file page to end_pdf_page.
-        temp_author = re.findall(
+        # are returned, append them to find_author. Append the current PDF file page to end_pdf_page.
+        find_author = re.findall(
             r'(?<=\n)[A-Z].\s{0,2}[A-Z].\s{0,2}[A-Z]\s{0,2}[,. A-Za-z]{0,6}(?=\n)|'
             r'(?<=\n)[A-Z].\s{0,2}[A-Z].[,. A-Za-z]{0,6}(?=\n)|'
             r'(?<=\n)Bd. {0,2}(?=\n)',
             page_text[page_number])
-        if temp_author:
-            author1.append(temp_author[0])
-            if len(temp_author) == 2:
-                author2.append(temp_author[1])
-            else:
-                author2.append("")
+        if find_author:
+            author_list = []
+            for count in range(0, 4):
+                try:
+                    f_name, m_name, l_name, suffix = journaltools.splitname(find_author[count])
+                    author_temp = f_name, m_name, l_name, suffix
+                except IndexError:
+                    author_temp = '', '', '', ''
+                author_list.append(author_temp)
+            author.append(author_list)
             # Pieces this is used for are unsigned, so end page numbers shouldn't be set when authors are found.
             # Instead end pages are assigned when the title to the next piece is found, above.
             # end_pdf_page.append(page_number)
         else:
-            author1.append('')
-            author2.append('')
+            author.append([('', '', '', ''), ('', '', '', ''), ('', '', '', ''), ('', '', '', '')])
         if 0 < debug < 5:
-            print('Author: %s' % temp_author)
+            print('Author: %s' % find_author)
         if 1 < debug < 5:
             print(f'PDF start pages: {start_pdf_page}')
             print(f'PDF end pages: {end_pdf_page}')
@@ -110,15 +112,15 @@ def processpdfnew(verbose, debug, page_text):
     # Compare lists to see if they contain the same number of values. If not, then pad out the short lists with
     # empty values and throw a warning. Evaluation is in two groups: The values updated when a title is found,
     # and the values updated when an author is found.
-    # if len(title) > len(author1):
+    # if len(title) > len(author):
     #     print('WARNING! Missing authors and ending PDF pages')
-    #     for r in range(len(author1), len(title)):
-    #         author1.append('')
+    #     for r in range(len(author), len(title)):
+    #         author.append('')
     #         author2.append('')
     #         end_pdf_page.append(0)
-    # elif len(author1) > len(title):
+    # elif len(author) > len(title):
     #     print('WARNING! Missing titles, start pages, and starting PDF pages')
-    #     for r in range(len(title), len(author1)):
+    #     for r in range(len(title), len(author)):
     #         title.append('')
     #         start_page.append('')
     #         start_pdf_page.append(0)
@@ -128,8 +130,7 @@ def processpdfnew(verbose, debug, page_text):
     if debug == 2 or debug == 4:
         print('\n\nAll list values:')
         print(title)
-        print(author1)
-        print(author2)
+        print(author)
         print(start_page)
         print(start_pdf_page)
         print(end_pdf_page)
@@ -137,11 +138,11 @@ def processpdfnew(verbose, debug, page_text):
     if debug == 6:
         print('\n\nAll records:')
         for r in range(0, len(title)):
-            print(f'Record {r}: {title[r]}; {author1[r]}; {author2[r]}; {start_page[r]}; {start_pdf_page[r]}; ' 
+            print(f'Record {r}: {title[r]}; {author[r]}; {start_page[r]}; {start_pdf_page[r]}; ' 
                   f'{end_pdf_page[r]}')
 
     # Return all collected metadata lists.
-    return title, start_page, start_pdf_page, end_pdf_page, author1, author2
+    return title, start_page, start_pdf_page, end_pdf_page, author
 
 
 def main():
@@ -200,11 +201,11 @@ def main():
         # Fetch OCR page text from PDF file
         page_text = journaltools.getpdf(args.filename, 0, args.verbose, args.debug)
         # Process pages
-        title, start_page, start_pdf_page, end_pdf_page, author1, author2 = processpdfnew(
+        title, start_page, start_pdf_page, end_pdf_page, author = processpdfnew(
             args.verbose, args.debug, page_text)
         # Export CSV file, or show what output would be if test flag is set
-        journaltools.exportcsv(output_file, args.verbose, args.debug, args.test, title, start_page, start_pdf_page,
-                               end_pdf_page, author1, author2)
+        journaltools.exportcsvnew(output_file, args.verbose, args.debug, args.test, title, start_page, start_pdf_page,
+                                  end_pdf_page, author)
 
     # Split Original PDF into separate documents for each piece, unless test or csvOnly flags are set
     if not args.test and not args.csvOnly:
