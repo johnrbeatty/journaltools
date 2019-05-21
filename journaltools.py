@@ -106,6 +106,7 @@ def getpdf(filename, maxpages, verbose, debug):
 
     # open TextConverter device from pdfminer; there should probably be code in here to pass arguments
     # other than the filename to the converter. Maxpages has been added. Password still to be added.
+    # FIXME: Add password functionality. Check to see if there are any other arguments that should be passed.
     rsrcmgr = PDFResourceManager()
     retstr = io.StringIO()
     codec = 'utf-8'
@@ -146,7 +147,8 @@ def getpdf(filename, maxpages, verbose, debug):
     return page_text
 
 
-def exportcsvnew(output_file, verbose, debug, test, title, start_page, start_pdf_page, end_pdf_page, author):
+def exportcsvnew(output_file, verbose, debug, test, title, start_page, start_pdf_page, end_pdf_page, author,
+                 section=None):
     # All new export routine that uses tuples for the author names. Most of the metadata scraping routines need to be
     # updated to use this routine instead of the old one. The old code uses two lists for the authors, author 1
     # and author 2. author1 was a list for the first (or sole) author on each piece and author2 was a list for
@@ -160,9 +162,30 @@ def exportcsvnew(output_file, verbose, debug, test, title, start_page, start_pdf
 
     # Export collected metadata to CSV file. If test flag set, display metadata instead.
     if not test:
-        # Set export filename. Replace pdf extension in processed file with csv extension.
+        headers = []
+        author_count = 0
+        # Build the headers.
+        if title:
+            headers.append('title')
+        if section:
+            headers.append('section')
+        if start_page:
+            headers.append('start_page')
+        if start_pdf_page:
+            headers.append('start_pdf_page')
+        if end_pdf_page:
+            headers.append('end_pdf_page')
+        for c in range(0, len(author)):
+            if len(author[c]) > author_count:
+                author_count = len(author[c])
+        for c in range(0, author_count):
+            headers.append('f_name' + str(c+1))
+            headers.append('m_name' + str(c+1))
+            headers.append('l_name' + str(c+1))
+            headers.append('suffix' + str(c+1))
+
         export_file = output_file + '.csv'
-        with open(export_file, "w", newline='\n') as csvfile:
+        with open(export_file, 'w', newline='\n') as csvfile:
             data_writer = csv.writer(
                 csvfile,
                 delimiter=',',
@@ -171,10 +194,7 @@ def exportcsvnew(output_file, verbose, debug, test, title, start_page, start_pdf
                 escapechar=" ",
                 quoting=csv.QUOTE_MINIMAL)
             # Write column headers
-            data_writer.writerow(['title', 'start_page', 'start_pdf_page', 'end_pdf_page', 'f_name1',
-                                  'm_name1', 'l_name1', 'suffix1', 'f_name2', 'm_name2', 'l_name2', 'suffix2',
-                                  'f_name3', 'm_name3', 'l_name3', 'suffix3', 'f_name4', 'm_name4', 'l_name4',
-                                  'suffix4'])
+            data_writer.writerow(headers)
             # Step through each record and write to CSV
             for r in range(0, len(title)):
                 # Check author list to make sure there is data for four authors. For any list entry with no data,
@@ -182,18 +202,26 @@ def exportcsvnew(output_file, verbose, debug, test, title, start_page, start_pdf
                 for c in range(0, 4):
                     if len(author[r]) < c+1:
                         author[r].append(('', '', '', ''))
+                # Build row
+                row_data = []
+                if title:
+                    row_data.append(title[r])
+                if section:
+                    row_data.append(section[r])
+                if start_page:
+                    row_data.append(start_page[r])
+                if start_pdf_page:
+                    row_data.append(start_pdf_page[r])
+                if end_pdf_page:
+                    row_data.append(end_pdf_page[r])
+                if author:
+                    for c in range(0, len(author[r])):
+                        for d in range(0, 4):
+                            row_data.append(author[r][c][d])
 
                 if debug:
-                    print(f'{title[r]}, {start_page[r]}, {start_pdf_page[r]}, {end_pdf_page[r]}, {author[r][0][0]},'
-                          f' {author[r][0][1]}, {author[r][0][2]}, {author[r][0][3]}, {author[r][1][0]},'
-                          f' {author[r][1][1]}, {author[r][1][2]}, {author[r][1][3]}, {author[r][2][0]},'
-                          f' {author[r][2][1]}, {author[r][2][2]}, {author[r][2][3]}, {author[r][3][0]},'
-                          f' {author[r][3][1]}, {author[r][3][2]}, {author[r][3][3]}')
-                data_writer.writerow(
-                    [title[r], start_page[r], start_pdf_page[r], end_pdf_page[r], author[r][0][0], author[r][0][1],
-                     author[r][0][2], author[r][0][3], author[r][1][0], author[r][1][1], author[r][1][2],
-                     author[r][1][3], author[r][2][0], author[r][2][1], author[r][2][2], author[r][2][3],
-                     author[r][3][0], author[r][3][1], author[r][3][2], author[r][3][3]])
+                    print(row_data)
+                data_writer.writerow(row_data)
             csvfile.close()
             if verbose:
                 print("Data written to file: %s" % export_file)
@@ -220,6 +248,8 @@ def importcsv(filename, debug):
     end_pdf_page = []
     start_col = 0
     end_col = 0
+
+    # TODO: Add verbose option?
     with open(filename, newline='') as csvfile:
         data_reader = csv.reader(csvfile, delimiter=",", quotechar="'")
         for row in data_reader:
@@ -233,7 +263,7 @@ def importcsv(filename, debug):
                 start_pdf_page.append(int(row[start_col]))
                 end_pdf_page.append(int(row[end_col]))
             except ValueError:
-                print()
+                print('Start or ending PDF pages appear to be missing. Check input file.')
     csvfile.close()
     if debug:
         print(start_pdf_page)
@@ -287,6 +317,7 @@ def croppages(input_file, output_file, verbose, debug):
     temp_filename, temp_extension = os.path.splitext(input_file)
     temp_filename = temp_filename + '-temp' + temp_extension
     page_type = doublepages(input_file, temp_filename, verbose)
+    # TODO: Integrate doublepages into this code?
 
     if verbose:
         print(f'Processing {temp_filename}')
@@ -382,6 +413,7 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
     #
     # This new code can take a template file and assign column numbers based on its headings. Defaults are the
     # old hardcoded columns.
+    # TODO: Update for all possible metadata fields?
 
     title_col = 0
     page_col = 0
@@ -490,6 +522,7 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
 def dirshift(path, verbose, debug, test):
     # File finder for shiftpage. Allows user to drop all files needing a shifted page and the files containing those
     # pages into one directory and automatically shift the pages.
+    # TODO: Update to work with any filenames?
 
     for file in os.listdir(path):
         # Separate filename from path. Retrieve parts of filename as match groups. This is set to work with the standard

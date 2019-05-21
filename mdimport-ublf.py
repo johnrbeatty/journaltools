@@ -25,6 +25,7 @@ def importxl(import_file):
     pdf_start_page = []
     pdf_end_page = []
     author = []
+    section = []
 
     # Set defaults for columns; will be overwritten as necessary
     section_col = 1
@@ -78,13 +79,8 @@ def importxl(import_file):
     # Iterate through all rows, reading values into lists to pass back to main.
     max_row = ws.max_row
     for i in range(2, max_row+1):
-        section = ws.cell(row=i, column=section_col).internal_value
-        title_temp = ws.cell(row=i, column=title_col).internal_value
-        # Prepend the section title if there is one to the article title.
-        if section:
-            title.append(section + ': ' + title_temp)
-        else:
-            title.append(title_temp)
+        section.append(ws.cell(row=i, column=section_col).internal_value)
+        title.append(ws.cell(row=i, column=title_col).internal_value)
         page_temp = ws.cell(row=i, column=page_col).internal_value
         if page_temp:
             page.append(page_temp)
@@ -112,7 +108,7 @@ def importxl(import_file):
         else:
             author.append('')
 
-    return title, page, pdf_start_page, pdf_end_page, author
+    return title, page, pdf_start_page, pdf_end_page, author, section
 
 
 def main():
@@ -151,10 +147,10 @@ def main():
         output_file, output_extension = os.path.splitext(args.filename)
 
     # Fetch metadata from import Excel file
-    title, start_page, start_pdf_page, end_pdf_page, author = importxl(args.filename)
+    title, start_page, start_pdf_page, end_pdf_page, author, section = importxl(args.filename)
     # Export CSV file, or show what output would be if test flag is set
     exportcsvnew(output_file, args.verbose, args.debug, args.test, title, start_page, start_pdf_page,
-                 end_pdf_page, author)
+                 end_pdf_page, author, section=section)
 
 
 if __name__ == '__main__':
