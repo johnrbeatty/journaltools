@@ -3,6 +3,7 @@ import os
 import csv
 
 from openpyxl import Workbook
+from journaltools import dateconvert
 
 # This is an alternate routine to dc-convert.py & journaltools.convertcsv that is used with CSV files exported
 # from mdgen-blr.py. It converts and exports those files to an Excel file that can be cut and pasted into a
@@ -81,37 +82,8 @@ def convertcsv(input_file, output_file, verbose):
             except IndexError:
                 print('Warning. List out of range. Check export.')
 
-            if month != '':
-                month = month.capitalize()
-                if month == "January":
-                    month = "01"
-                elif month == "February":
-                    month = "02"
-                elif month == "March":
-                    month = "03"
-                elif month == "April":
-                    month = "04"
-                elif month == "May":
-                    month = "05"
-                elif month == "June":
-                    month = "06"
-                elif month == "July":
-                    month = "07"
-                elif month == "August":
-                    month = "08"
-                elif month == "September":
-                    month = "09"
-                elif month == "October":
-                    month = "10"
-                elif month == "November":
-                    month = "11"
-                elif month == "December":
-                    month = "12"
-                else:
-                    month = "00"
-                date = str(year) + '-' + month + '-01'
-            else:
-                date = str(year)
+            date = dateconvert(year, month)
+
             ws.cell(row=wbrow, column=1, value=title)
             ws.cell(row=wbrow, column=42, value=volume)
             ws.cell(row=wbrow, column=37, value=start_page)
