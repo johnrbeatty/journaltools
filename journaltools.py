@@ -251,7 +251,7 @@ def importcsv(filename, debug):
 
     # TODO: Add verbose option?
     with open(filename, newline='') as csvfile:
-        data_reader = csv.reader(csvfile, delimiter=",", quotechar="'")
+        data_reader = csv.reader(csvfile, delimiter=",", quotechar='"', escapechar="\\")
         for row in data_reader:
             if start_col == 0 and end_col == 0:
                 for c in range(0, len(row)):
@@ -259,7 +259,10 @@ def importcsv(filename, debug):
                         start_col = c
                     if row[c] == "end_pdf_page":
                         end_col = c
+                continue
             try:
+                if 0 < debug < 5:
+                    print(row)
                 start_pdf_page.append(int(row[start_col]))
                 end_pdf_page.append(int(row[end_col]))
             except ValueError:
@@ -417,6 +420,7 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
 
     title_col = 0
     page_col = 0
+    section_col = 0
     author_col = []
 
     if template_file:
@@ -434,6 +438,8 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
                 title_col = c + 1
             if headers[c] == 'fpage':
                 page_col = c + 1
+            if headers[c] == 'section':
+                section_col = c + 1
             for n in range(0, 4):
                 if headers[c] == 'author' + str(n+1) + '_fname':
                     author_col.append(c + 1)
@@ -466,6 +472,7 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
         headers = next(data_reader)
         title_in_col = ''
         page_in_col = ''
+        section_in_col = ''
         author_in_col = []
 
         for c in range(0, len(headers)):
@@ -476,6 +483,9 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
             if headers[c] == 'start_page':
                 page_in_col = c
                 ws.cell(row=wbrow, column=page_col, value='fpage')
+            if headers[c] == 'section':
+                section_in_col = c
+                ws.cell(row=wbrow, column=section_col, value='section')
             for n in range(0, 4):
                 if headers[c] == 'f_name' + str(n+1):
                     author_in_col.append(c)
@@ -495,20 +505,25 @@ def convertcsv(input_file, output_file, template_file, verbose, debug):
                 ws.cell(row=wbrow, column=title_col, value=row[title_in_col])
             if page_in_col:
                 ws.cell(row=wbrow, column=page_col, value=row[page_in_col])
+            if section_in_col:
+                ws.cell(row=wbrow, column=section_col, value=row[section_in_col])
             for n in range(0, 4):
-                if author_in_col[n]:
-                    try:
-                        ws.cell(row=wbrow, column=author_col[n], value=row[author_in_col[n]])
-                        ws.cell(row=wbrow, column=author_col[n] + 1, value=row[author_in_col[n]+1])
-                        ws.cell(row=wbrow, column=author_col[n] + 2, value=row[author_in_col[n]+2])
-                        ws.cell(row=wbrow, column=author_col[n] + 3, value=row[author_in_col[n]+3])
-                    # Figure out how to get a row number out of this.
-                    except IndexError:
-                        print(f'Warning: Potentially missing data in row {row}')
-                    if row[author_in_col[n]] and row[author_in_col[n]+2]:
-                        ws.cell(row=wbrow, column=author_col[n]+6, value='FALSE')
-                    elif row[author_in_col[n]]:
-                        ws.cell(row=wbrow, column=author_col[n]+6, value='TRUE')
+                try:
+                    if author_in_col[n]:
+                        try:
+                            ws.cell(row=wbrow, column=author_col[n], value=row[author_in_col[n]])
+                            ws.cell(row=wbrow, column=author_col[n] + 1, value=row[author_in_col[n]+1])
+                            ws.cell(row=wbrow, column=author_col[n] + 2, value=row[author_in_col[n]+2])
+                            ws.cell(row=wbrow, column=author_col[n] + 3, value=row[author_in_col[n]+3])
+                        # Figure out how to get a row number out of this.
+                        except IndexError:
+                            print(f'Warning: Potentially missing data in row {row}')
+                        if row[author_in_col[n]] and row[author_in_col[n]+2]:
+                            ws.cell(row=wbrow, column=author_col[n]+6, value='FALSE')
+                        elif row[author_in_col[n]]:
+                            ws.cell(row=wbrow, column=author_col[n]+6, value='TRUE')
+                except IndexError:
+                    continue
 
             wbrow += 1
 
