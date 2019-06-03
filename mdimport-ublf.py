@@ -3,6 +3,7 @@ import argparse
 
 from openpyxl import load_workbook
 from journaltools import exportcsvnew
+from journaltools import capitalize_title
 
 # This program takes in a user-compiled Excel file with the journal metadata and converts it to a CSV file for use
 # with the other tools here. It's used in place of dsplit for journals which are unsuitable for automatic
@@ -79,8 +80,15 @@ def importxl(import_file):
     # Iterate through all rows, reading values into lists to pass back to main.
     max_row = ws.max_row
     for i in range(2, max_row+1):
-        section.append(ws.cell(row=i, column=section_col).internal_value)
-        title.append(ws.cell(row=i, column=title_col).internal_value)
+        section_temp = ws.cell(row=i, column=section_col).internal_value
+        if section_temp:
+            section_temp = section_temp.title()
+            section_temp = capitalize_title(section_temp)
+        section.append(section_temp)
+        temp_title = ws.cell(row=i, column=title_col).internal_value
+        temp_title = temp_title.title()
+        temp_title = capitalize_title(temp_title)
+        title.append(temp_title)
         page_temp = ws.cell(row=i, column=page_col).internal_value
         if page_temp:
             page.append(page_temp)
